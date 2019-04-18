@@ -1,7 +1,7 @@
 PyPets is a game in Python that is meant for the joy (the minimal amount that you can get out of it, anyway) of the operating user.
 
 DEPENDENCIES:
-APScheduler
+APScheduler;
 CPython (should come prepackaged, but you never know.)
 
 When starting up, the game may automatically install APScheduler, a dependency of the game.
