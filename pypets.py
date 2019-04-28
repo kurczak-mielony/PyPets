@@ -1,6 +1,9 @@
+import tkinter as tk
+from tkinter import messagebox
+import random, time, sys, sqlite3, os
+
 #PyPets
 #By Kurczak Mielony
-import random, time, sys, sqlite3, os
 
 def apsched():
     try:
@@ -17,7 +20,7 @@ if flag: os.system(f"TIMEOUT 2 > nul && python {os.path.abspath(__file__)}" if o
 else: from apscheduler.schedulers.background import BackgroundScheduler #This backwards approach seems to work on installing APScheduler even on computers without it, as well as removing any name errors.
 
 hunger = random.randint(80,100)
-happiness = random.randint(80,100)
+happiness = random.randint(0,80)
 dirtiness = random.randint(50, 100)
 sick = False; sicknessfactor = 2
 #Right now, these stats don't mean anything. But later on, when the pets portion part of the database is complete,
@@ -25,6 +28,22 @@ sick = False; sicknessfactor = 2
 
 
 username = "" #Done to prevent name errors later on.
+
+def statupdate():
+    global hunger, happiness, sick, dirtiness, after_id, w, root
+    happyface = ": )"; neutralface = ": |"; sadface = ": ("
+    if happiness > 74: face = happyface
+    elif happiness > 49: face = neutralface
+    else: face = sadface
+    label = f"Hunger: {hunger}/100\nHappiness: {happiness}/100 {face}\nDirtiness: {dirtiness}/100\nSick: {sick}"
+    w.configure(text=label)
+    after_id = root.after(1000, statupdate)
+
+def deletionprotocol():
+    global after_id
+    if messagebox.askokcancel("Quit", "Do you really wish to quit?"):
+        root.after_cancel(after_id)
+        root.destroy()
 
 conn = sqlite3.connect('pypets.db')
 c = conn.cursor()
@@ -149,15 +168,15 @@ def username_edit():
 def game():
     userselection()
     scheduler = BackgroundScheduler()
-    global username, sick
+    global username, sick, w, root
     try:
         print(f"You are now playing as {username[0]}.")
         scheduler.add_job(background, 'interval', seconds=30, jitter=5)
         scheduler.add_job(dirty, 'interval', seconds=30, jitter=5)
         scheduler.start()
         while True:
-            choicetext = "What would you like to do?\n1. F eed your pet\n2. P lay with your pet\n3. S how current stats\n4. C lear the screen\n5. E dit your name\n6. M ain menu\n"
-            if sick: choicetext+="6. G ive your pet medicine"
+            choicetext = "What would you like to do?\n1. F eed your pet\n2. P lay with your pet\n3. S how current stats\n4. C lear the screen\n5. E dit your name\n6. M ain menu\n7. O pen a GUI\n"
+            if sick: choicetext+="8. G ive your pet medicine"
             choice = input(choicetext)
             if selection(choice, 1, "F"): feedpet()
             elif selection(choice, 2, "P"): play()
@@ -165,7 +184,21 @@ def game():
             elif selection(choice, 4, "C"): os.system('cls' if os.name == 'nt' else 'clear')
             elif selection(choice, 5, "E"): username_edit()
             elif selection(choice, 6, "M"): scheduler.shutdown(); break
-            elif selection(choice, 6, "G") and sick: sick = False; print("Your pet was cured of its ailment!\n")
+            elif selection(choice, 7, "O"):
+                root = tk.Tk()
+                root.title("PyPets")
+                frame1 = tk.Frame(root)
+                frame1.pack(side='left')
+                frame2 = tk.Frame(root)
+                frame2.pack(side='right')
+                w = tk.Label(frame2, width = 20, height = 5, text="Welcome to PyPets!")
+                playpet = tk.Button(frame1, text="Play with your pet", width=25, height=10, command=play)
+                feed = tk.Button(frame1, text="Feed your pet", width=25, height=10, command=feedpet)
+                w.pack(expand=True); feed.pack(); playpet.pack()
+                root.protocol("WM_DELETE_WINDOW", deletionprotocol)
+                statupdate()
+                root.mainloop()
+            elif selection(choice, 8, "G") and sick: sick = False; print("Your pet was cured of its ailment!\n")
             else: print("Please choose the number or letter corresponding to the activity.\n")
     except (KeyboardInterrupt, SystemExit):
             scheduler.shutdown()
