@@ -35,8 +35,8 @@ def statupdate():
     if happiness > 74: face = happyface
     elif happiness > 49: face = neutralface
     else: face = sadface
-    label = f"Hunger: {hunger}/100\nHappiness: {happiness}/100 {face}\nDirtiness: {dirtiness}/100\nSick: {sick}"
-    w.configure(text=label)
+    label = f"STATISTICS:\nHunger: {hunger}/100\nHappiness: {happiness}/100 {face}\nDirtiness: {dirtiness}/100\nSick: {sick}"
+    w.config(text=label)
     after_id = root.after(1000, statupdate)
 
 def deletionprotocol():
@@ -136,20 +136,21 @@ def userselection():
             print("Available users:")
             for item in users:
                 print(f"{item[0]}. {item[1]}")
-            user = input("Please enter the number of the user you would like to play as, or enter \'C\' to create a new user.\n")
+            user = input("Please enter the number of the user you would like to play as, enter \'E\' or \'ESC\' to exit the selection process, or enter \'C\' to create a new user.\n")
             if user.strip() in [str(x[0]) for x in users]:
-                c.execute('SELECT name FROM pypetusers WHERE userid=?', (int(user),))
+                c.execute('SELECT name FROM pypetusers WHERE userid=?', (int(user.strip()),))
                 username = c.fetchone()
-                break
+                return True
             elif user.upper().strip() == "C":
                 name = input("Please enter a user name to be known by. This can be changed later.\n")
                 c.execute('INSERT INTO pypetusers VALUES (NULL, (?))', (name,))
                 conn.commit()
                 print("The new user was successfully created.\n\n")
                 continue
+            elif user.upper().strip() == "E" or user.upper().strip() == "ESC": return False
             else:
                 print("Please either choose the number corresponding to a user or \'C\'.")
-        break
+                continue
 
 def username_edit():
     global username
@@ -165,43 +166,45 @@ def username_edit():
     username = c.fetchone()
     conn.commit()
 
+def clearscreen():
+    if os.name == 'nt': os.system('cls')
+    else: os.system('clear')
+
 def game():
-    userselection()
     scheduler = BackgroundScheduler()
     global username, sick, w, root
-    try:
-        print(f"You are now playing as {username[0]}.")
-        scheduler.add_job(background, 'interval', seconds=30, jitter=5)
-        scheduler.add_job(dirty, 'interval', seconds=30, jitter=5)
-        scheduler.start()
-        while True:
-            choicetext = "What would you like to do?\n1. F eed your pet\n2. P lay with your pet\n3. S how current stats\n4. C lear the screen\n5. E dit your name\n6. M ain menu\n7. O pen a GUI\n"
-            if sick: choicetext+="8. G ive your pet medicine"
-            choice = input(choicetext)
-            if selection(choice, 1, "F"): feedpet()
-            elif selection(choice, 2, "P"): play()
-            elif selection(choice, 3, "S"): display_stats()
-            elif selection(choice, 4, "C"): os.system('cls' if os.name == 'nt' else 'clear')
-            elif selection(choice, 5, "E"): username_edit()
-            elif selection(choice, 6, "M"): scheduler.shutdown(); break
-            elif selection(choice, 7, "O"):
-                root = tk.Tk()
-                root.title("PyPets")
-                frame1 = tk.Frame(root)
-                frame1.pack(side='left')
-                frame2 = tk.Frame(root)
-                frame2.pack(side='right')
-                w = tk.Label(frame2, width = 20, height = 5, text="Welcome to PyPets!")
-                playpet = tk.Button(frame1, text="Play with your pet", width=25, height=10, command=play)
-                feed = tk.Button(frame1, text="Feed your pet", width=25, height=10, command=feedpet)
-                w.pack(expand=True); feed.pack(); playpet.pack()
-                root.protocol("WM_DELETE_WINDOW", deletionprotocol)
-                statupdate()
-                root.mainloop()
-            elif selection(choice, 8, "G") and sick: sick = False; print("Your pet was cured of its ailment!\n")
-            else: print("Please choose the number or letter corresponding to the activity.\n")
-    except (KeyboardInterrupt, SystemExit):
-            scheduler.shutdown()
+    if userselection():
+        try:
+            print(f"You are now playing as {username[0]}.")
+            scheduler.add_job(background, 'interval', seconds=30, jitter=5)
+            scheduler.add_job(dirty, 'interval', seconds=30, jitter=5)
+            scheduler.start()
+            while True:
+                choicetext = "What would you like to do?\n1. F eed your pet\n2. P lay with your pet\n3. S how current stats\n4. C lear the screen\n5. E dit your name\n6. M ain menu\n7. O pen a GUI\n"
+                if sick: choicetext+="8. G ive your pet medicine"
+                choice = input(choicetext)
+                if selection(choice, 1, "F"): feedpet()
+                elif selection(choice, 2, "P"): play()
+                elif selection(choice, 3, "S"): display_stats()
+                elif selection(choice, 4, "C"): clearscreen()
+                elif selection(choice, 5, "E"): username_edit()
+                elif selection(choice, 6, "M"): scheduler.shutdown(); break
+                elif selection(choice, 7, "O"):
+                    root = tk.Tk(); root.title("PyPets!")
+                    w = tk.Label(root, text="")
+                    playpet = tk.Button(root, text="Play with your pet", command=play)
+                    feed = tk.Button(root, text="Feed your pet", command=feedpet)
+                    clear = tk.Button(root, text="Clear the shell", command=clearscreen)
+                    w.grid(row=0, column=1, rowspan=4, sticky='we',padx=5, pady=5)
+                    feed.grid(row=0, column=0, sticky='we'); playpet.grid(row=1,column=0, sticky='we'); clear.grid(column=0, row=3, sticky='we')
+                    root.protocol("WM_DELETE_WINDOW", deletionprotocol)
+                    statupdate()
+                    root.mainloop()
+                elif selection(choice, 8, "G") and sick: sick = False; print("Your pet was cured of its ailment!\n")
+                else: print("Please choose the number or letter corresponding to the activity.\n")
+        except (KeyboardInterrupt, SystemExit):
+                scheduler.shutdown()
+    else: return
 
 def mainmenu():
     main_menu = """ _______  __   __  _______  _______  _______  _______
