@@ -15,15 +15,17 @@ After creating a user (or even multiple), you can choose a user to play as in th
 This will actually matter in later stages, but for now, all stats are randomly generated upon starting the game part of the game.
 In the game, there is the following menu:
 
-1. F eed your pet - This option, self-explanatorily, feeds your pet and raises its hunger.
-2. P lay with your pet - This option, also self-explanatorily, allows you to play with your pet and raise its happiness.
+1. F eed your pet - This option, self-explanatorily, feeds your pet and raises its hunger.Available in the GUI.
+2. P lay with your pet - This option, also self-explanatorily, allows you to play with your pet and raise its happiness. Available in the GUI.
 
 [Side note: As of 4/17/19, at least, happiness does not actually go down. So...]
 
-3. S how current stats - Most of these are actually pretty self-explanatory. This displays your pets current stats.
-4. C lear the screen - Clears the screen. This uses the 'clear' command on most Operating Systems, but 'cls' on Windows-based systems. This makes a difference, as 'clear' allows you to scroll up and see history.
-5. E dit your name - Change your username. Pressing enter cancels the operation.
-6. M ain Menu - This returns you to the main menu that you saw when you first started the game.
+3. S how current stats - Most of these are actually pretty self-explanatory. This displays your pets current stats. Available in the GUI, but not as an option; it is displayed by default.
+4. C lear the screen - Clears the screen. This uses the 'clear' command on most Operating Systems, but 'cls' on Windows-based systems. This makes a difference, as 'clear' allows you to scroll up and see history. Also, you know, they don't work cross platform. That makes a difference too. Available in the GUI.
+5. E dit your name - Change your username. Pressing enter cancels the operation. Not available in the GUI.
+6. M ain Menu - This returns you to the main menu that you saw when you first started the game. Not available in the GUI.
+7. O pen a GUI - Opens a Graphical User Interface in a new window. Has limited functionality compared to the shell (cannot administer medication or edit name.) Not available in the GUI... for obvious reasons.
+8. A dminister medication - Previously 'G ive your pet medicine,' this option appears if the pet is sick. Choosing it removes the pet's sickness and hides the option. Not available in the GUI.
 
 If you find any bugs or errors in the game that you're fairly certain aren't supposed to happen, please submit an issue or something.
 I'm not entirely sure how Github works, so you'd know what to do.
