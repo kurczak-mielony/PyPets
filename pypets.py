@@ -19,13 +19,12 @@ flag = apsched()
 if flag: os.system(f"TIMEOUT 2 > nul && python {os.path.abspath(__file__)}" if os.name == 'nt' else f"sleep 2 && python {os.path.abspath(__file__)}")
 else: from apscheduler.schedulers.background import BackgroundScheduler #This backwards approach seems to work on installing APScheduler even on computers without it, as well as removing any name errors.
 
-hunger = random.randint(80,100)
-happiness = random.randint(0,80)
-dirtiness = random.randint(50, 100)
-sick = False; sicknessfactor = 2
+hunger = random.randint(0,100)
+happiness = random.randint(0,100)
+dirtiness = random.randint(0, 100)
+sick = False
 #Right now, these stats don't mean anything. But later on, when the pets portion part of the database is complete,
 #these will be saved per pet, and no longer just be randomly generated.
-
 
 username = "" #Done to prevent name errors later on.
 
@@ -39,10 +38,17 @@ def statupdate():
     w.config(text=label)
     after_id = root.after(1000, statupdate)
 
+def med_button():
+    global sick, after_id2, root, medicine
+    if sick: medicine.grid(column=0, row=3, sticky='we')
+    else: medicine.grid_remove()
+    after_id2 = root.after(1000, med_button)
+
 def deletionprotocol():
-    global after_id
-    if messagebox.askokcancel("Quit", "Do you really wish to quit?"):
+    global after_id, after_id2
+    if messagebox.askokcancel("Quit", "Do you really want to quit the PyPets GUI?"):
         root.after_cancel(after_id)
+        root.after_cancel(after_id2)
         root.destroy()
 
 conn = sqlite3.connect('pypets.db')
@@ -92,18 +98,21 @@ def background():
     else: return
 
 def dirty():
-    global dirtiness, sick, sicknessfactor
+    global dirtiness, sick
     activities = ("played in the mud", "went digging through the trash", "had an accident in the house")
     activity = random.choice(activities); adj = "dirtiness"
     dirtinessgain = random.randint(1, 5)
     dirtinessgain, dirtiness = statgain(dirtiness, dirtinessgain, adj)
-    toprange = 101; bottomrange = 90
-    while True:
+    toprange = 101; bottomrange = 90; sicknessfactor = 2
+    while not sick:
+        print(f"{toprange} | {bottomrange} || {sicknessfactor}")
         if dirtiness in range(bottomrange, toprange):
             sicknessprobability = random.randint(1, sicknessfactor)
+            print(sicknessprobability)
             if sicknessprobability == 1: sick = True; break
             else: sick = False; break
         if bottomrange != 0:
+            print("Here.")
             bottomrange-=10
             toprange-=10
             sicknessfactor+=2
@@ -112,6 +121,7 @@ def dirty():
     display = f"Yuck! Your pet {activity} and gained {dirtinessgain}! It is now at {dirtiness}/100 {adj} points.\n"
     if sick: display+="Your pet has contracted an illness. You can remedy this by applying medication to your pet.\n"
     print(display)
+
 def selection(inpt, num, letter):
         if inpt == str(num) or inpt.upper().strip() == letter: return True
 
@@ -170,18 +180,23 @@ def clearscreen():
     if os.name == 'nt': os.system('cls')
     else: os.system('clear')
 
+def administer():
+    global sick
+    sick = False
+    print("Your pet was cured of its ailment!\n")
+
 def game():
     scheduler = BackgroundScheduler()
-    global username, sick, w, root
+    global username, sick, w, root, medicine
     if userselection():
         try:
             print(f"You are now playing as {username[0]}.")
             scheduler.add_job(background, 'interval', seconds=30, jitter=5)
-            scheduler.add_job(dirty, 'interval', seconds=30, jitter=5)
+            scheduler.add_job(dirty, 'interval', seconds=10, jitter=5)
             scheduler.start()
             while True:
                 choicetext = "What would you like to do?\n1. F eed your pet\n2. P lay with your pet\n3. S how current stats\n4. C lear the screen\n5. E dit your name\n6. M ain menu\n7. O pen a GUI\n"
-                if sick: choicetext+="8. G ive your pet medicine"
+                if sick: choicetext+="8. A dminister medication\n"
                 choice = input(choicetext)
                 if selection(choice, 1, "F"): feedpet()
                 elif selection(choice, 2, "P"): play()
@@ -195,12 +210,14 @@ def game():
                     playpet = tk.Button(root, text="Play with your pet", command=play)
                     feed = tk.Button(root, text="Feed your pet", command=feedpet)
                     clear = tk.Button(root, text="Clear the shell", command=clearscreen)
+                    medicine = tk.Button(root, text="Administer medication", command=administer)
                     w.grid(row=0, column=1, rowspan=4, sticky='we',padx=5, pady=5)
-                    feed.grid(row=0, column=0, sticky='we'); playpet.grid(row=1,column=0, sticky='we'); clear.grid(column=0, row=3, sticky='we')
+                    feed.grid(row=0, column=0, sticky='we'); playpet.grid(row=1,column=0, sticky='we'); clear.grid(column=0, row=2, sticky='we')
                     root.protocol("WM_DELETE_WINDOW", deletionprotocol)
                     statupdate()
+                    med_button()
                     root.mainloop()
-                elif selection(choice, 8, "G") and sick: sick = False; print("Your pet was cured of its ailment!\n")
+                elif selection(choice, 8, "A") and sick: administer()
                 else: print("Please choose the number or letter corresponding to the activity.\n")
         except (KeyboardInterrupt, SystemExit):
                 scheduler.shutdown()
