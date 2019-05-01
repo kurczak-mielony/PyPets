@@ -40,7 +40,7 @@ def statupdate():
 
 def med_button():
     global sick, after_id2, root, medicine
-    if sick: medicine.grid(column=0, row=3, sticky='we')
+    if sick: medicine.grid(column=0, row=4, sticky='we')
     else: medicine.grid_remove()
     after_id2 = root.after(1000, med_button)
 
@@ -104,23 +104,34 @@ def dirty():
     dirtinessgain = random.randint(1, 5)
     dirtinessgain, dirtiness = statgain(dirtiness, dirtinessgain, adj)
     toprange = 101; bottomrange = 90; sicknessfactor = 2
+    if sick: x = False
     while not sick:
-        print(f"{toprange} | {bottomrange} || {sicknessfactor}")
         if dirtiness in range(bottomrange, toprange):
             sicknessprobability = random.randint(1, sicknessfactor)
-            print(sicknessprobability)
-            if sicknessprobability == 1: sick = True; break
-            else: sick = False; break
+            if sicknessprobability == 1: sick = True; x = sick; break
+            else: sick = False; x = sick; break
         if bottomrange != 0:
-            print("Here.")
             bottomrange-=10
             toprange-=10
             sicknessfactor+=2
             continue
         else: break
     display = f"Yuck! Your pet {activity} and gained {dirtinessgain}! It is now at {dirtiness}/100 {adj} points.\n"
-    if sick: display+="Your pet has contracted an illness. You can remedy this by applying medication to your pet.\n"
+    if x: display+="Your pet has contracted an illness. You can remedy this by applying medication to your pet.\n"
     print(display)
+
+def cleanpet():
+    global dirtiness
+    adj = "dirtiness"
+    if dirtiness != 0:
+        cleanlinessgain = random.randint(1,15)
+        if dirtiness - cleanlinessgain < 0:
+            cleanlinessgain = abs(0-dirtiness)
+            dirtiness = 0
+        else:
+            dirtiness-=cleanlinessgain
+        print(f"You gave your pet a bath and it lost {cleanlinessgain} {adj} points. It is now at {dirtiness}/100 {adj} points.")
+    else: print("Your pet isn't dirty, so there's no point in giving it a bath.")
 
 def selection(inpt, num, letter):
         if inpt == str(num) or inpt.upper().strip() == letter: return True
@@ -192,32 +203,35 @@ def game():
         try:
             print(f"You are now playing as {username[0]}.")
             scheduler.add_job(background, 'interval', seconds=30, jitter=5)
-            scheduler.add_job(dirty, 'interval', seconds=10, jitter=5)
+            scheduler.add_job(dirty, 'interval', seconds=30, jitter=5)
             scheduler.start()
             while True:
-                choicetext = "What would you like to do?\n1. F eed your pet\n2. P lay with your pet\n3. S how current stats\n4. C lear the screen\n5. E dit your name\n6. M ain menu\n7. O pen a GUI\n"
-                if sick: choicetext+="8. A dminister medication\n"
+                choicetext = "What would you like to do?\n1. F eed your pet\n2. P lay with your pet\n3. S how current stats\n4. C lear the screen\n5. G ive your pet a bath\n6. E dit your name\n7. M ain menu\n8. O pen a GUI\n"
+                if sick: choicetext+="9. A dminister medication\n"
                 choice = input(choicetext)
                 if selection(choice, 1, "F"): feedpet()
                 elif selection(choice, 2, "P"): play()
                 elif selection(choice, 3, "S"): display_stats()
                 elif selection(choice, 4, "C"): clearscreen()
-                elif selection(choice, 5, "E"): username_edit()
-                elif selection(choice, 6, "M"): scheduler.shutdown(); break
-                elif selection(choice, 7, "O"):
+                elif selection(choice, 4, "C"): cleanpet()
+                elif selection(choice, 6, "E"): username_edit()
+                elif selection(choice, 7, "M"): scheduler.shutdown(); break
+                elif selection(choice, 8, "O"):
                     root = tk.Tk(); root.title("PyPets!")
                     w = tk.Label(root, text="")
                     playpet = tk.Button(root, text="Play with your pet", command=play)
                     feed = tk.Button(root, text="Feed your pet", command=feedpet)
                     clear = tk.Button(root, text="Clear the shell", command=clearscreen)
+                    clean = tk.Button(root, text="Give your pet a bath", command=cleanpet)
                     medicine = tk.Button(root, text="Administer medication", command=administer)
-                    w.grid(row=0, column=1, rowspan=4, sticky='we',padx=5, pady=5)
-                    feed.grid(row=0, column=0, sticky='we'); playpet.grid(row=1,column=0, sticky='we'); clear.grid(column=0, row=2, sticky='we')
+                    w.grid(row=0, column=1, rowspan=5, sticky='we',padx=5, pady=5)
+                    feed.grid(row=0, column=0, sticky='we'); playpet.grid(row=1,column=0, sticky='we');
+                    clear.grid(column=0, row=2, sticky='we'); clean.grid(column=0, row=3, sticky='we')
                     root.protocol("WM_DELETE_WINDOW", deletionprotocol)
                     statupdate()
                     med_button()
                     root.mainloop()
-                elif selection(choice, 8, "A") and sick: administer()
+                elif selection(choice, 9, "A") and sick: administer()
                 else: print("Please choose the number or letter corresponding to the activity.\n")
         except (KeyboardInterrupt, SystemExit):
                 scheduler.shutdown()
